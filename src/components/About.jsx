@@ -22,7 +22,7 @@ export default function About() {
     </Container>
     <Container flex={1} ai="end" style={{ margin: 'auto'}}>
       <center>
-        <img alt={"example"} src={"/config/images/logo.png"} style={{width: '100%'}}/>
+        <img alt={"example"} src={"/config/images/cryptobadrobots_logo.png"} style={{width: '100%'}}/>
       </center>
     </Container>
   </ResponsiveWrapper>

@@ -17,7 +17,7 @@ export default function useConfig() {
     GAS_LIMIT: 285000,
     MARKETPLACE: "Rarible",
     MARKETPLACE_LINK: "https://rinkeby.rarible.com/collection/0x8dead658e69f0933c68383277adc9e9a205bd643/items",
-    SHOW_BACKGROUND: false,
+    SHOW_BACKGROUND: true,
   });
 
 

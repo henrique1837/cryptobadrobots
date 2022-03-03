@@ -14,6 +14,8 @@ function App() {
   return (
       <s.Container
         style={{ padding: 24, backgroundColor: "grey" }}
+        image={CONFIG.SHOW_BACKGROUND ? "/config/images/bg.png" : null}
+
       >
         <Menu links={[
           {href: '#mint', label: "Mint"},
@@ -21,9 +23,10 @@ function App() {
           {href: '#team', label: "Team"},
         ]}/>
 
+
         <s.SpacerSmall />
 
-        <Banner subtitle={`Smart Contract address: ${CONFIG.CONTRACT_ADDRESS}`} />
+        <Banner title={<s.StyledLogo  ai='flex-center' src="/config/images/logo_complete.png"/>} subtitle={`Smart Contract address: ${CONFIG.CONTRACT_ADDRESS}`} />
 
         <s.SpacerMedium />
         <s.Container jc="center" ai="center">

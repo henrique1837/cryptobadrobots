@@ -18,21 +18,15 @@ const SocialMediaLink = styled('a').attrs({
 `;
 
 export default function Footer() {
-  return <Container jc="center" ai="center">
-  <TextTitle
-    style={{
-      textAlign: "center",
-      color: "var(--primary-text)",
-      borderBottom: "1px solid var(--primary-text)",
-      minWidth: "75%",
-      padding: "2rem"
-    }}
-  >
-    Crypto Bad Robots
-  </TextTitle>
-  <BottomContainer fd="row">
-    <SocialMediaLink href="https://twitter.com/"><TwitterIcon /></SocialMediaLink>
-    <SocialMediaLink href="https://www.instagram.com/"><InstagramIcon /></SocialMediaLink>
-  </BottomContainer>
-</Container>
+  return(
+  <Container jc="center" ai="center">
+    <center>
+      <img alt={"example"} src={"/config/images/cryptobadrobots.png"} style={{width: '15%'}}/>
+    </center>
+    <BottomContainer fd="row">
+      <SocialMediaLink href="https://twitter.com/"><TwitterIcon /></SocialMediaLink>
+      <SocialMediaLink href="https://www.instagram.com/"><InstagramIcon /></SocialMediaLink>
+    </BottomContainer>
+  </Container>
+  )
 }
