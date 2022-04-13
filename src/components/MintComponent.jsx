@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from "react-redux";
-import { fetchData } from "../redux/data/dataActions";
-import { connect } from "../redux/blockchain/blockchainActions";
+import React, { useEffect,useMemo, useState } from 'react'
+import { ethers } from "ethers";
+
 import {
   Container,
   ResponsiveWrapper,
@@ -22,57 +21,62 @@ const truncate = (input, len) =>
   input.length > len ? `${input.substring(0, len)}...` : input;
 
 
-export default function MintComponent() {
-  const dispatch = useDispatch();
-  const blockchain = useSelector((state) => state.blockchain);
-  const data = useSelector((state) => state.data);
+export default function MintComponent(props) {
+
   const [claimingNft, setClaimingNft] = useState(false);
   const [feedback, setFeedback] = useState(`Click buy to mint your NFT.`);
   const [mintAmount, setMintAmount] = useState(1);
+  const [totalSupply,setTotalSupply] = useState();
+  const [maxSupply,setMaxSupply] = useState();
+
   const CONFIG = useConfig()
 
-  useEffect(() => {
-    getData();
-  }, [blockchain.account]);
 
-  
-  const getData = () => {
-    if (blockchain.account !== "" && blockchain.smartContract !== null) {
-      dispatch(fetchData(blockchain.account));
+  useEffect(async () => {
+    if(props.contract){
+      props.contract.totalSupply()
+      .then(async supply => {
+        const newTotalSupply = Number(supply);
+        const newMaxSupply = Number(await props.contract.maxSupply());
+        setTotalSupply(newTotalSupply);
+        setMaxSupply(newTotalSupply);
+
+        const filter = props.contract.filters.Transfer("0x0000000000000000000000000000000000000000",null,null);
+        const res = props.contract.on(filter, async (from,to,tokenId) => {
+          const newTotalSupply = Number(await props.contract.totalSupply());
+          setTotalSupply(newTotalSupply);
+        });
+      })
+      .catch(err => {
+        console.log(err)
+      })
     }
-  };
+  },[props.contract])
 
-  
-  const claimNFTs = () => {
-    let cost = CONFIG.WEI_COST;
-    let gasLimit = CONFIG.GAS_LIMIT;
-    let totalCostWei = String(cost * mintAmount);
-    let totalGasLimit = String(gasLimit * mintAmount);
-    console.log("Cost: ", totalCostWei);
-    console.log("Gas limit: ", totalGasLimit);
-    setFeedback(`Minting your ${CONFIG.NFT_NAME}...`);
-    setClaimingNft(true);
-    blockchain.smartContract.methods
-      .mint(mintAmount)
-      .send({
-        gasLimit: String(totalGasLimit),
-        to: CONFIG.CONTRACT_ADDRESS,
-        from: blockchain.account,
-        value: totalCostWei,
-      })
-      .once("error", (err) => {
-        console.log(err);
-        setFeedback("Sorry, something went wrong please try again later.");
-        setClaimingNft(false);
-      })
-      .then((receipt) => {
-        console.log(receipt);
-        setFeedback(
-          `WOW, the ${CONFIG.NFT_NAME} is yours! go visit Opensea.io to view it.`
-        );
-        setClaimingNft(false);
-        dispatch(fetchData(blockchain.account));
+
+
+  const claimNFTs = async () => {
+    try{
+      let cost = 0.01;
+      let totalCost = String(cost * mintAmount);
+      console.log("Cost: ", totalCost);
+      setFeedback(`Minting your CryptoBadRobot ...`);
+      setClaimingNft(true);
+      const signer = props.provider.getSigner()
+      const tokenWithSigner = props.contract.connect(signer);
+      const tx = await tokenWithSigner.mint(mintAmount,{
+        value: ethers.utils.parseEther(totalCost.toString())
       });
+
+      await tx.wait();
+      setFeedback(
+        `WOW, the CryptoBadRobot is yours! It will appears from the apocalypse soon!`
+      );
+    } catch(err){
+      console.log(err);
+      setFeedback(err.message);
+      setClaimingNft(false);
+    }
   };
 
   const changeMintAmount = (e, number) => {
@@ -85,6 +89,8 @@ export default function MintComponent() {
     }
     setMintAmount(newMintAmount);
   };
+
+
 
   return (
     <ResponsiveWrapper flex={1} style={{ padding: 24 }} test>
@@ -103,7 +109,7 @@ export default function MintComponent() {
                 color: "var(--accent-text)",
               }}
             >
-              {data.totalSupply} / {CONFIG.MAX_SUPPLY}
+              {totalSupply ? totalSupply : 0 } / {maxSupply ? maxSupply : 0}
             </TextTitle>
             <TextDescription
               style={{
@@ -111,12 +117,12 @@ export default function MintComponent() {
                 color: "var(--primary-text)",
               }}
             >
-              <StyledLink target={"_blank"} href={CONFIG.SCAN_LINK}>
-                {truncate(CONFIG.CONTRACT_ADDRESS, 15)}
+              <StyledLink target={"_blank"} href={`${CONFIG.SCAN_LINK}/${props.contract?.address}`}>
+                {props.contract && truncate(props.contract?.address, 15)}
               </StyledLink>
             </TextDescription>
             <SpacerSmall />
-            {Number(data.totalSupply) >= CONFIG.MAX_SUPPLY ? (
+            {Number(totalSupply) >= Number(maxSupply) ? (
               <>
                 <TextTitle
                   style={{ textAlign: "center", color: "var(--accent-text)" }}
@@ -148,8 +154,9 @@ export default function MintComponent() {
                   Excluding gas fee
                 </TextDescription>
                 <SpacerSmall />
-                {blockchain.account === "" ||
-                blockchain.smartContract === null ? (
+                {
+                  !props.coinbase ||
+                  !props.contract ? (
                   <Container ai={"center"} jc={"center"}>
                     <TextDescription
                       style={{
@@ -160,28 +167,29 @@ export default function MintComponent() {
                       Connect to the {CONFIG.NETWORK.NAME} network
                     </TextDescription>
                     <SpacerSmall />
+
                     <StyledButton
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
-                        dispatch(connect());
-                        getData();
+                        await props.loadWeb3Modal();
                       }}
                     >
                       CONNECT
                     </StyledButton>
-                    {blockchain.errorMsg !== "" ? (
-                      <>
-                        <SpacerSmall />
-                        <TextDescription
-                          style={{
-                            textAlign: "center",
-                            color: "var(--accent-text)",
-                          }}
-                        >
-                          {blockchain.errorMsg}
-                        </TextDescription>
-                      </>
-                    ) : null}
+                    {
+                        props.err &&
+                        <>
+                          <SpacerSmall />
+                          <TextDescription
+                            style={{
+                              textAlign: "center",
+                              color: "var(--accent-text)",
+                            }}
+                          >
+                            {props.err.message}
+                          </TextDescription>
+                        </>
+                    }
                   </Container>
                 ) : (
                   <>
@@ -223,10 +231,9 @@ export default function MintComponent() {
                     <Container ai={"center"} jc={"center"} fd={"row"}>
                       <StyledButton
                         disabled={claimingNft ? 1 : 0}
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.preventDefault();
-                          claimNFTs();
-                          getData();
+                          await claimNFTs();
                         }}
                       >
                         {claimingNft ? "BUSY" : "BUY"}

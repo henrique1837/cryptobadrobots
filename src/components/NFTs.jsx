@@ -1,6 +1,6 @@
 import React from 'react'
 import styled from 'styled-components';
-import {Container, ResponsiveWrapper, SpacerLarge, TextDescription, TextTitle,StyledLink}from '../styles/globalStyles'
+import {Container, ResponsiveWrapper, SpacerLarge, TextDescription, TextTitle}from '../styles/globalStyles'
 
 const Avatar = styled('div')`
     background-image: url(${props => props.src});
@@ -13,8 +13,8 @@ const Avatar = styled('div')`
 `;
 
 
-const TeamMember = ({img, name}) => (
-  <div style={{ paddingBottom: '2rem', marginLeft: '1rem', marginRight: '1rem' }}>
+const NFT = ({img,name,owner}) => (
+  <div flex={1} style={{ paddingBottom: '2rem', marginLeft: '1rem', marginRight: '1rem' }}>
     <Avatar alt={name} src={img} />
     <TextDescription
       style={{
@@ -24,12 +24,20 @@ const TeamMember = ({img, name}) => (
     >
       {name}
     </TextDescription >
+    <TextDescription
+      style={{
+        textAlign: "center",
+        color: "var(--primary-text)",
+      }}
+    >
+      {owner}
+    </TextDescription >
   </div>
 )
 
-export default function Team({members}) {
+export default function NFTs({nfts,title}) {
   return (
-    <Container id="team" jc="center" ai="center">
+    <Container id="nfts" jc="center" ai="center">
       <TextTitle
         style={{
           textAlign: "center",
@@ -37,11 +45,11 @@ export default function Team({members}) {
           paddingTop: "2rem",
         }}
       >
-        Team
+        {title}
       </TextTitle>
       <SpacerLarge />
-      <ResponsiveWrapper style={{justifyContent: 'center'}}>
-        {members.map(({img, name}, idx) => <TeamMember key={`team-member-${idx}`} {...{img, name}} />)}
+      <ResponsiveWrapper style={{justifyContent: 'center'}} flex={1}>
+        {nfts.map(({img, name,owner}, idx) => <NFT key={`team-member-${idx}`} {...{img, name,owner}} />)}
       </ResponsiveWrapper>
     </Container>
   )

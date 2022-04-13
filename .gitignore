@@ -54,6 +54,8 @@ dist/
 node_modules/
 jspm_packages/
 
+hardhat/node_modules
+
 # TypeScript v1 declaration files
 
 typings/

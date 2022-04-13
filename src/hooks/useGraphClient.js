@@ -1,0 +1,99 @@
+import { useState } from "react";
+
+// Enter a valid infura key here to avoid being rate limited
+// You can get a key for free at https://infura.io/register
+import { ApolloClient, InMemoryCache,gql } from '@apollo/client';
+import useConfig from "../hooks/config";
+import { addresses, abis } from "../contracts";
+
+const APIURL_BOBA = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-boba";
+const APIURL_RINKEBY_BOBA = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-boba";
+const APIURL_RINKEBY = "https://api.thegraph.com/subgraphs/name/ryry79261/rinkeby-erc721";
+
+function useGraphClient() {
+  const CONFIG = useConfig()
+
+  const [client,setClient] = useState();
+  const [contractAddress,setContractAddress] = useState();
+  const initiateClient = (netId) => {
+    //if(!client && netId){
+     let newClient;
+     let newContractAddress;
+
+     if(netId === 4){
+       newClient = new ApolloClient({
+         uri: APIURL_RINKEBY,
+         cache: new InMemoryCache()
+       });
+       newContractAddress = addresses.nft.rinkeby;
+     }
+     if(netId === 28){
+       newClient = new ApolloClient({
+         uri: APIURL_RINKEBY_BOBA,
+         cache: new InMemoryCache()
+       });
+       newContractAddress = addresses.nft.rinkeby_boba
+     }
+     if(netId === 288){
+       newClient = new ApolloClient({
+         uri: APIURL_BOBA,
+         cache: new InMemoryCache()
+       });
+       newContractAddress = addresses.nft.boba
+     }
+     setContractAddress(newContractAddress);
+     setClient(newClient);
+   //}
+ }
+  const getNftsFrom = async (address) => {
+   const tokensQuery = `
+      query {
+        erc721Tokens(
+          first: 5,
+          where: {
+            contract: "${contractAddress.toLowerCase()}",
+            owner: "${address.toLowerCase()}"
+          },
+        	orderBy: identifier,
+        	orderDirection: desc
+        ) {
+      	  id,
+          identifier,
+          owner,
+          uri
+      	}
+    }
+   `;
+   const results = await client.query({
+     query: gql(tokensQuery)
+   });
+   return(results);
+ }
+ const getLastNfts = async () => {
+  const tokensQuery = `
+     query {
+    	erc721Tokens(
+        first: 5,
+        where: {
+          contract: "${contractAddress.toLowerCase()}",
+        },
+      	orderBy: identifier,
+      	orderDirection: desc
+      ) {
+    	  id,
+        identifier,
+        owner,
+        uri
+    	}
+
+    }
+  `;
+  const results = await client.query({
+    query: gql(tokensQuery)
+  });
+  return(results);
+}
+ return({client,initiateClient,contractAddress,getNftsFrom,getLastNfts})
+}
+
+export default useGraphClient;
