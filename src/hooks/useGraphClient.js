@@ -48,19 +48,22 @@ function useGraphClient() {
   const getNftsFrom = async (address) => {
    const tokensQuery = `
       query {
-        erc721Tokens(
+        erc721Transfers(
           first: 5,
+          orderBy: timestamp,
+          orderDirection:desc,
           where: {
-            contract: "${contractAddress.toLowerCase()}",
-            owner: "${address.toLowerCase()}"
-          },
-        	orderBy: identifier,
-        	orderDirection: desc
+            contract : "${contractAddress.toLowerCase()}",
+            from: "0x0000000000000000000000000000000000000000",
+            to: "${address.toLowerCase()}"
+          }
         ) {
       	  id,
-          identifier,
-          owner,
-          uri
+          token {
+            identifier,
+            owner,
+            uri
+          }
       	}
     }
    `;
@@ -72,21 +75,23 @@ function useGraphClient() {
  const getLastNfts = async () => {
   const tokensQuery = `
      query {
-    	erc721Tokens(
-        first: 5,
-        where: {
-          contract: "${contractAddress.toLowerCase()}",
-        },
-      	orderBy: identifier,
-      	orderDirection: desc
-      ) {
-    	  id,
-        identifier,
-        owner,
-        uri
-    	}
-
-    }
+       erc721Transfers(
+         first: 5,
+         orderBy: timestamp,
+         orderDirection:desc,
+         where: {
+           contract : "${contractAddress.toLowerCase()}",
+           from: "0x0000000000000000000000000000000000000000"
+         }
+       ) {
+         id,
+         token {
+           identifier,
+           owner,
+           uri
+         }
+       }
+   }
   `;
   const results = await client.query({
     query: gql(tokensQuery)

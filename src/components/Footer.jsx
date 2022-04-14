@@ -2,7 +2,7 @@ import React from 'react'
 import styled from 'styled-components';
 import { Container, TextTitle } from "../styles/globalStyles"
 import { ReactComponent as TwitterIcon } from '../assets/icons/twitter.svg'
-
+import { ReactComponent as TelegramIcon } from '../assets/icons/icons8-telegram-app.svg';
 
 const BottomContainer = styled(Container)`
   padding: 1rem;
@@ -24,6 +24,7 @@ export default function Footer() {
     </center>
     <BottomContainer fd="row">
       <SocialMediaLink href="https://twitter.com/Cryopotbadrobot"><TwitterIcon /></SocialMediaLink>
+      <SocialMediaLink href="https://t.me/cryptobadrobots"><TelegramIcon /></SocialMediaLink>
     </BottomContainer>
   </Container>
   )

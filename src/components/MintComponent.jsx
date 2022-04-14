@@ -23,41 +23,44 @@ const truncate = (input, len) =>
 
 export default function MintComponent(props) {
 
+
+
+  const CONFIG = useConfig();
   const [claimingNft, setClaimingNft] = useState(false);
   const [feedback, setFeedback] = useState(`Click buy to mint your NFT.`);
   const [mintAmount, setMintAmount] = useState(1);
   const [totalSupply,setTotalSupply] = useState();
   const [maxSupply,setMaxSupply] = useState();
+  const [cost,setCost] = useState(CONFIG.DISPLAY_COST);
 
-  const CONFIG = useConfig()
 
+  const initiateContracts = async () => {
 
-  useEffect(async () => {
-    if(props.contract){
-      props.contract.totalSupply()
-      .then(async supply => {
-        const newTotalSupply = Number(supply);
-        const newMaxSupply = Number(await props.contract.maxSupply());
-        setTotalSupply(newTotalSupply);
-        setMaxSupply(newTotalSupply);
-
-        const filter = props.contract.filters.Transfer("0x0000000000000000000000000000000000000000",null,null);
-        const res = props.contract.on(filter, async (from,to,tokenId) => {
-          const newTotalSupply = Number(await props.contract.totalSupply());
-          setTotalSupply(newTotalSupply);
-        });
-      })
-      .catch(err => {
-        console.log(err)
-      })
+    try{
+      const newSupply = await props.contract.totalSupply()
+      const newTotalSupply = Number(newSupply);
+      const newMaxSupply = Number(await props.contract.maxSupply());
+      const newCost = Number(await props.contract.cost())/10**18;
+      setTotalSupply(newTotalSupply);
+      setMaxSupply(newMaxSupply);
+      setCost(newCost);
+      const filter = props.contract.filters.Transfer("0x0000000000000000000000000000000000000000",null,null);
+      const res = props.contract.on(filter, async (from,to,tokenId) => {
+        let eventTotalSupply = Number(await props.contract.totalSupply());
+        setTotalSupply(eventTotalSupply);
+        await props.getLastNftsMetadatas();
+        if(props.coinbase){
+          await props.getLastNftsMetadatas(props.coinbase)
+        }
+      });
+    } catch(err){
+      console.log(err)
     }
-  },[props.contract])
 
-
+  }
 
   const claimNFTs = async () => {
     try{
-      let cost = 0.01;
       let totalCost = String(cost * mintAmount);
       console.log("Cost: ", totalCost);
       setFeedback(`Minting your CryptoBadRobot ...`);
@@ -67,15 +70,29 @@ export default function MintComponent(props) {
       const tx = await tokenWithSigner.mint(mintAmount,{
         value: ethers.utils.parseEther(totalCost.toString())
       });
-
+      setFeedback(
+        `Waiting transaction confirmation`
+      );
       await tx.wait();
       setFeedback(
-        `WOW, the CryptoBadRobot is yours! It will appears from the apocalypse soon!`
+        `CryptoBadRobot will emerge from the apocalypse soon!`
       );
+      const newTotalSupply = Number(await props.contract.totalSupply());
+      setTotalSupply(newTotalSupply);
+      setTimeout(() => {
+        setClaimingNft(false);
+        setFeedback();
+
+      },10000)
     } catch(err){
       console.log(err);
       setFeedback(err.message);
       setClaimingNft(false);
+      setTimeout(() => {
+        setClaimingNft(false);
+        setFeedback();
+
+      },10000)
     }
   };
 
@@ -90,6 +107,15 @@ export default function MintComponent(props) {
     setMintAmount(newMintAmount);
   };
 
+
+  useEffect(() => {
+    if(props.contract){
+      initiateContracts()
+    } else {
+      setTotalSupply();
+      setMaxSupply();
+    }
+  },[props.contract])
 
 
   return (
@@ -117,7 +143,13 @@ export default function MintComponent(props) {
                 color: "var(--primary-text)",
               }}
             >
-              <StyledLink target={"_blank"} href={`${CONFIG.SCAN_LINK}/${props.contract?.address}`}>
+              <StyledLink target={"_blank"} href={
+                `${props.netId === 4 ?
+                 CONFIG.SCAN_LINK_RINKEBY :
+                 props.netId === 28 ?
+                 CONFIG.SCAN_LINK_BOBA_RINKEBY :
+                 CONFIG.SCAN_LINK}/${props.contract?.address}`
+              }>
                 {props.contract && truncate(props.contract?.address, 15)}
               </StyledLink>
             </TextDescription>
@@ -135,8 +167,20 @@ export default function MintComponent(props) {
                   You can still find {CONFIG.NFT_NAME} on
                 </TextDescription>
                 <SpacerSmall />
-                <StyledLink target={"_blank"} href={CONFIG.MARKETPLACE_LINK}>
-                  {CONFIG.MARKETPLACE}
+                <StyledLink target={"_blank"} href={
+                  props.netId === 4 ?
+                  CONFIG.MARKETPLACE_LINK_RINKEBY :
+                  props.netId === 28 ?
+                  CONFIG.MARKETPLACE_LINK_BOBA_RINKEBY :
+                  CONFIG.MARKETPLACE_LINK
+                }>
+                  {
+                    props.netId === 4 ?
+                    CONFIG.MARKETPLACE_RINKEBY :
+                    props.netId === 28 ?
+                    CONFIG.MARKETPLACE_BOBA_RINKEBY : 
+                    CONFIG.MARKETPLACE
+                  }
                 </StyledLink>
               </>
             ) : (
@@ -144,8 +188,12 @@ export default function MintComponent(props) {
                 <TextTitle
                   style={{ textAlign: "center", color: "var(--accent-text)" }}
                 >
-                  1 {CONFIG.SYMBOL} costs {CONFIG.DISPLAY_COST}{" "}
-                  {CONFIG.NETWORK.SYMBOL}.
+                  1 {CONFIG.SYMBOL} costs {cost}{" "}
+                  {
+                    props.netId === 4 ?
+                    "ETH" :
+                    "MATIC"
+                  }
                 </TextTitle>
                 <SpacerXSmall />
                 <TextDescription
@@ -197,6 +245,7 @@ export default function MintComponent(props) {
                       style={{
                         textAlign: "center",
                         color: "var(--accent-text)",
+                        wordBreak: "break-word"
                       }}
                     >
                       {feedback}

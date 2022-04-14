@@ -13,8 +13,8 @@ const Avatar = styled('div')`
 `;
 
 
-const NFT = ({img,name,owner}) => (
-  <div flex={1} style={{ paddingBottom: '2rem', marginLeft: '1rem', marginRight: '1rem' }}>
+const NFT = ({img,name}) => (
+  <div flex={1} style={{ paddingBottom: '2rem', marginLeft: '1rem', marginRight: '1rem' }} >
     <Avatar alt={name} src={img} />
     <TextDescription
       style={{
@@ -23,14 +23,6 @@ const NFT = ({img,name,owner}) => (
       }}
     >
       {name}
-    </TextDescription >
-    <TextDescription
-      style={{
-        textAlign: "center",
-        color: "var(--primary-text)",
-      }}
-    >
-      {owner}
     </TextDescription >
   </div>
 )
@@ -49,7 +41,7 @@ export default function NFTs({nfts,title}) {
       </TextTitle>
       <SpacerLarge />
       <ResponsiveWrapper style={{justifyContent: 'center'}} flex={1}>
-        {nfts.map(({img, name,owner}, idx) => <NFT key={`team-member-${idx}`} {...{img, name,owner}} />)}
+        {nfts.map(({img, name}) => <NFT key={`team-member-${name}`} {...{img, name}} />)}
       </ResponsiveWrapper>
     </Container>
   )

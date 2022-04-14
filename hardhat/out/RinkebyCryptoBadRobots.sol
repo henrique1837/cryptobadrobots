@@ -24,7 +24,7 @@ interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721.sol)
 /**
  * @dev Required interface of an ERC721 compliant contract.
@@ -163,7 +163,7 @@ interface IERC721 is IERC165 {
     ) external;
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/IERC721Receiver.sol)
 /**
  * @title ERC721 token receiver interface
@@ -188,7 +188,7 @@ interface IERC721Receiver {
     ) external returns (bytes4);
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/extensions/IERC721Metadata.sol)
 /**
  * @title ERC-721 Non-Fungible Token Standard, optional metadata extension
@@ -211,7 +211,7 @@ interface IERC721Metadata is IERC721 {
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (utils/Address.sol)
 /**
  * @dev Collection of functions related to the address type
@@ -431,7 +431,7 @@ library Address {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 /**
  * @dev Provides information about the current execution context, including the
@@ -453,7 +453,7 @@ abstract contract Context {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 /**
  * @dev String operations.
@@ -518,7 +518,7 @@ library Strings {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/introspection/ERC165.sol)
 /**
  * @dev Implementation of the {IERC165} interface.
@@ -543,7 +543,7 @@ abstract contract ERC165 is IERC165 {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (token/ERC721/ERC721.sol)
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
@@ -980,7 +980,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
     ) internal virtual {}
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts (last updated v4.5.0) (token/ERC721/extensions/IERC721Enumerable.sol)
 /**
  * @title ERC-721 Non-Fungible Token Standard, optional enumeration extension
@@ -1005,7 +1005,7 @@ interface IERC721Enumerable is IERC721 {
     function tokenByIndex(uint256 index) external view returns (uint256);
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (token/ERC721/extensions/ERC721Enumerable.sol)
 /**
  * @dev This implements an optional extension of {ERC721} defined in the EIP that adds
@@ -1163,7 +1163,173 @@ abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
+// OpenZeppelin Contracts (last updated v4.5.0) (interfaces/IERC2981.sol)
+/**
+ * @dev Interface for the NFT Royalty Standard.
+ *
+ * A standardized way to retrieve royalty payment information for non-fungible tokens (NFTs) to enable universal
+ * support for royalty payments across all NFT marketplaces and ecosystem participants.
+ *
+ * _Available since v4.5._
+ */
+interface IERC2981 is IERC165 {
+    /**
+     * @dev Returns how much royalty is owed and to whom, based on a sale price that may be denominated in any unit of
+     * exchange. The royalty amount is denominated and should be payed in that same unit of exchange.
+     */
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+        external
+        view
+        returns (address receiver, uint256 royaltyAmount);
+}
+
+
+// OpenZeppelin Contracts (last updated v4.5.0) (token/common/ERC2981.sol)
+/**
+ * @dev Implementation of the NFT Royalty Standard, a standardized way to retrieve royalty payment information.
+ *
+ * Royalty information can be specified globally for all token ids via {_setDefaultRoyalty}, and/or individually for
+ * specific token ids via {_setTokenRoyalty}. The latter takes precedence over the first.
+ *
+ * Royalty is specified as a fraction of sale price. {_feeDenominator} is overridable but defaults to 10000, meaning the
+ * fee is specified in basis points by default.
+ *
+ * IMPORTANT: ERC-2981 only specifies a way to signal royalty information and does not enforce its payment. See
+ * https://eips.ethereum.org/EIPS/eip-2981#optional-royalty-payments[Rationale] in the EIP. Marketplaces are expected to
+ * voluntarily pay royalties together with sales, but note that this standard is not yet widely supported.
+ *
+ * _Available since v4.5._
+ */
+abstract contract ERC2981 is IERC2981, ERC165 {
+    struct RoyaltyInfo {
+        address receiver;
+        uint96 royaltyFraction;
+    }
+
+    RoyaltyInfo private _defaultRoyaltyInfo;
+    mapping(uint256 => RoyaltyInfo) private _tokenRoyaltyInfo;
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
+        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @inheritdoc IERC2981
+     */
+    function royaltyInfo(uint256 _tokenId, uint256 _salePrice)
+        external
+        view
+        virtual
+        override
+        returns (address, uint256)
+    {
+        RoyaltyInfo memory royalty = _tokenRoyaltyInfo[_tokenId];
+
+        if (royalty.receiver == address(0)) {
+            royalty = _defaultRoyaltyInfo;
+        }
+
+        uint256 royaltyAmount = (_salePrice * royalty.royaltyFraction) / _feeDenominator();
+
+        return (royalty.receiver, royaltyAmount);
+    }
+
+    /**
+     * @dev The denominator with which to interpret the fee set in {_setTokenRoyalty} and {_setDefaultRoyalty} as a
+     * fraction of the sale price. Defaults to 10000 so fees are expressed in basis points, but may be customized by an
+     * override.
+     */
+    function _feeDenominator() internal pure virtual returns (uint96) {
+        return 10000;
+    }
+
+    /**
+     * @dev Sets the royalty information that all ids in this contract will default to.
+     *
+     * Requirements:
+     *
+     * - `receiver` cannot be the zero address.
+     * - `feeNumerator` cannot be greater than the fee denominator.
+     */
+    function _setDefaultRoyalty(address receiver, uint96 feeNumerator) internal virtual {
+        require(feeNumerator <= _feeDenominator(), "ERC2981: royalty fee will exceed salePrice");
+        require(receiver != address(0), "ERC2981: invalid receiver");
+
+        _defaultRoyaltyInfo = RoyaltyInfo(receiver, feeNumerator);
+    }
+
+    /**
+     * @dev Removes default royalty information.
+     */
+    function _deleteDefaultRoyalty() internal virtual {
+        delete _defaultRoyaltyInfo;
+    }
+
+    /**
+     * @dev Sets the royalty information for a specific token id, overriding the global default.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must be already minted.
+     * - `receiver` cannot be the zero address.
+     * - `feeNumerator` cannot be greater than the fee denominator.
+     */
+    function _setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) internal virtual {
+        require(feeNumerator <= _feeDenominator(), "ERC2981: royalty fee will exceed salePrice");
+        require(receiver != address(0), "ERC2981: Invalid parameters");
+
+        _tokenRoyaltyInfo[tokenId] = RoyaltyInfo(receiver, feeNumerator);
+    }
+
+    /**
+     * @dev Resets royalty information for the token id back to the global default.
+     */
+    function _resetTokenRoyalty(uint256 tokenId) internal virtual {
+        delete _tokenRoyaltyInfo[tokenId];
+    }
+}
+
+
+// OpenZeppelin Contracts (last updated v4.5.0) (token/ERC721/extensions/ERC721Royalty.sol)
+/**
+ * @dev Extension of ERC721 with the ERC2981 NFT Royalty Standard, a standardized way to retrieve royalty payment
+ * information.
+ *
+ * Royalty information can be specified globally for all token ids via {_setDefaultRoyalty}, and/or individually for
+ * specific token ids via {_setTokenRoyalty}. The latter takes precedence over the first.
+ *
+ * IMPORTANT: ERC-2981 only specifies a way to signal royalty information and does not enforce its payment. See
+ * https://eips.ethereum.org/EIPS/eip-2981#optional-royalty-payments[Rationale] in the EIP. Marketplaces are expected to
+ * voluntarily pay royalties together with sales, but note that this standard is not yet widely supported.
+ *
+ * _Available since v4.5._
+ */
+abstract contract ERC721Royalty is ERC2981, ERC721 {
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC2981) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+
+    /**
+     * @dev See {ERC721-_burn}. This override additionally clears the royalty information for the token.
+     */
+    function _burn(uint256 tokenId) internal virtual override {
+        super._burn(tokenId);
+        _resetTokenRoyalty(tokenId);
+    }
+}
+
+
 // OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -1235,7 +1401,7 @@ abstract contract Ownable is Context {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/math/SafeMath.sol)
 // CAUTION
 // This version of SafeMath should only be used with Solidity 0.8 or later,
@@ -1459,7 +1625,94 @@ library SafeMath {
     }
 }
 
-// SPDX-License-Identifier: MIT
+
+// OpenZeppelin Contracts v4.4.1 (security/Pausable.sol)
+/**
+ * @dev Contract module which allows children to implement an emergency stop
+ * mechanism that can be triggered by an authorized account.
+ *
+ * This module is used through inheritance. It will make available the
+ * modifiers `whenNotPaused` and `whenPaused`, which can be applied to
+ * the functions of your contract. Note that they will not be pausable by
+ * simply including this module, only once the modifiers are put in place.
+ */
+abstract contract Pausable is Context {
+    /**
+     * @dev Emitted when the pause is triggered by `account`.
+     */
+    event Paused(address account);
+
+    /**
+     * @dev Emitted when the pause is lifted by `account`.
+     */
+    event Unpaused(address account);
+
+    bool private _paused;
+
+    /**
+     * @dev Initializes the contract in unpaused state.
+     */
+    constructor() {
+        _paused = false;
+    }
+
+    /**
+     * @dev Returns true if the contract is paused, and false otherwise.
+     */
+    function paused() public view virtual returns (bool) {
+        return _paused;
+    }
+
+    /**
+     * @dev Modifier to make a function callable only when the contract is not paused.
+     *
+     * Requirements:
+     *
+     * - The contract must not be paused.
+     */
+    modifier whenNotPaused() {
+        require(!paused(), "Pausable: paused");
+        _;
+    }
+
+    /**
+     * @dev Modifier to make a function callable only when the contract is paused.
+     *
+     * Requirements:
+     *
+     * - The contract must be paused.
+     */
+    modifier whenPaused() {
+        require(paused(), "Pausable: not paused");
+        _;
+    }
+
+    /**
+     * @dev Triggers stopped state.
+     *
+     * Requirements:
+     *
+     * - The contract must not be paused.
+     */
+    function _pause() internal virtual whenNotPaused {
+        _paused = true;
+        emit Paused(_msgSender());
+    }
+
+    /**
+     * @dev Returns to normal state.
+     *
+     * Requirements:
+     *
+     * - The contract must be paused.
+     */
+    function _unpause() internal virtual whenPaused {
+        _paused = false;
+        emit Unpaused(_msgSender());
+    }
+}
+
+
 interface LinkTokenInterface {
   function allowance(address owner, address spender) external view returns (uint256 remaining);
 
@@ -1494,7 +1747,7 @@ interface LinkTokenInterface {
   ) external returns (bool success);
 }
 
-// SPDX-License-Identifier: MIT
+
 contract VRFRequestIDBase {
   /**
    * @notice returns the seed which is actually input to the VRF coordinator
@@ -1533,7 +1786,7 @@ contract VRFRequestIDBase {
   }
 }
 
-// SPDX-License-Identifier: MIT
+
 /** ****************************************************************************
  * @notice Interface for contracts using VRF randomness
  * *****************************************************************************
@@ -1723,8 +1976,8 @@ abstract contract VRFConsumerBase is VRFRequestIDBase {
   }
 }
 
-//SPDX-License-Identifier: MIT
-contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
+
+contract RinkebyCryptoBadRobots is ERC721Enumerable,ERC721Royalty,Ownable,Pausable,VRFConsumerBase {
 
   using Strings for uint256;
 
@@ -1733,14 +1986,16 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
   uint256 internal fee;
   string public baseURI;
   string public baseExtension = ".json";
-  uint256 public cost = 20 ether;
-  uint256 public maxSupply = 3000;
+  uint256 public cost = 0.01 ether;
+  uint256 public maxSupply = 100;
   uint256 public maxMintAmount = 5;
 
   uint256 public pendingMints = 0;
   uint256 public totalPendingRequests = 0;
   uint256[] public lockedIds;
-
+  /// @dev Required by EIP-2981: NFT Royalty Standard
+  address private _receiver;
+  uint96 private _feeNumerator;
 
   mapping(uint256 => address) public creator;
   mapping(address => uint256) public addressMintedBalance;
@@ -1750,7 +2005,6 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
 
   mapping(address => bool) internal pendingRequest;
 
-
   using SafeMath for uint256;
 
   constructor(
@@ -1759,17 +2013,19 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     string memory _initBaseURI
   )
   VRFConsumerBase(
-      0x3d2341ADb2D31f1c5530cDC622016af293177AE0, // VRF Coordinator
-      0xb0897686c545045aFc77CF20eC7A532E3120E0F1  // LINK Token
+      0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
+      0x01BE23585060835E02B77ef475b0Cc51aA1e0709  // LINK Token
   )
   ERC721(_name, _symbol) {
-    keyHash = 0xf86195cf7690c55907b2b611ebb7343a6f649bff128701cc542f0569e2c549da;
-    fee = 0.0001 * 10 ** 18; // 0.0001 LINK (Varies by network)
+    keyHash = 0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311;
+    fee = 0.1 * 10 ** 18; // 0.0001 LINK (Varies by network)
     setBaseURI(_initBaseURI);
 
     for(uint256 i = 0;i < maxSupply;i++){
       lockedIds.push(i.add(1));
     }
+    /// @dev Set default royalties for EIP-2981
+    _setDefaultRoyalty(owner(), 100);
   }
 
   // internal
@@ -1778,7 +2034,7 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
   }
 
   // public
-  function mint(uint256 _mintAmount) external payable {
+  function mint(uint256 _mintAmount) external payable whenNotPaused {
 
     uint256 supply = totalSupply();
     require(pendingRequest[msg.sender] == false,"Please wait VRF return request");
@@ -1792,6 +2048,7 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     }
     require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK to send request!");
     bytes32 requestId = requestRandomness(keyHash, fee);
+    requestMinter[requestId] = msg.sender;
     requestMintAmount[requestId] = _mintAmount;
     (bool success, ) = payable(owner()).call{value: msg.value}("");
     require(success);
@@ -1799,25 +2056,35 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     pendingMints = pendingMints.add(1);
     totalPendingRequests = totalPendingRequests.add(1);
   }
-
+  /// Check interface support.
+  /// @param interfaceId the interface id to check support for
+  function supportsInterface(bytes4 interfaceId)
+      public
+      view
+      override(ERC721Enumerable, ERC721Royalty)
+      returns (bool)
+  {
+      return super.supportsInterface(interfaceId);
+  }
 
   /**
    * Callback function used by VRF Coordinator
    */
-   function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+  function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
 
-       for (uint256 i = 0; i <= requestMintAmount[requestId].sub(1); i++) {
-         uint256 result = randomness.mod(lockedIds.length);
-         addressMintedBalance[requestMinter[requestId]]++;
-         _safeMint(requestMinter[requestId], lockedIds[result]);
-         creator[result] = requestMinter[requestId];
-         delete lockedIds[result];
-         lockedIds[result] = lockedIds[lockedIds.length - 1];
-         lockedIds.pop();
-       }
-       pendingRequest[requestMinter[requestId]] = false;
-       totalPendingRequests = totalPendingRequests.sub(1);
-   }
+      pendingRequest[requestMinter[requestId]] = false;
+      totalPendingRequests = totalPendingRequests.sub(1);
+
+      for (uint256 i = 0; i <= requestMintAmount[requestId].sub(1); i++) {
+        uint256 result = randomness.mod(lockedIds.length);
+        addressMintedBalance[requestMinter[requestId]]++;
+        _safeMint(requestMinter[requestId], lockedIds[result]);
+        creator[result] = requestMinter[requestId];
+        delete lockedIds[result];
+        lockedIds[result] = lockedIds[lockedIds.length - 1];
+        lockedIds.pop();
+      }
+  }
 
   function walletOfOwner(address _owner)
     public
@@ -1844,6 +2111,7 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
       "ERC721Metadata: URI query for nonexistent token"
     );
 
+
     string memory currentBaseURI = _baseURI();
     return bytes(currentBaseURI).length > 0
         ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
@@ -1859,6 +2127,28 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     baseExtension = _newBaseExtension;
   }
 
+
+  // From https://github.com/vzoo/ERC721-with-EIP2981-Polygon-bulk-mint-OpenSea-compatible/blob/main/contracts/VZOOERC721.sol
+  /// Sets the default royalty address and fee
+  /// @dev feeNumerator defaults to 1000 = 10% of transaction value
+  /// @param receiver wallet address of new receiver
+  /// @param feeNumerator new fee numerator
+  function setDefaultRoyalty(address receiver, uint96 feeNumerator)
+      external
+      onlyOwner {
+      _setDefaultRoyalty(receiver, feeNumerator);
+  }
+
+  // Pauses the contract
+  function pause() external onlyOwner {
+      _pause();
+  }
+
+  // Unpauses the contract
+  function unpause() external onlyOwner {
+      _unpause();
+  }
+
   function withdrawLink(uint256 total) external onlyOwner {
     require(LINK.balanceOf(address(this)) >= total, "Not enough LINK");
     LINK.transfer(msg.sender,total);
@@ -1867,5 +2157,24 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     (bool sent, ) = payable(msg.sender).call{value: address(this).balance}("");
     require(sent);
   }
+  /// @param from wallet address to send the NFT from
+  /// @param to wallet address to send the NFT to
+  /// @param tokenId NFT id to transfer
+  function _beforeTokenTransfer(
+      address from,
+      address to,
+      uint256 tokenId
+  ) internal virtual override(ERC721, ERC721Enumerable) {
+      super._beforeTokenTransfer(from, to, tokenId);
+  }
 
+  /// @dev Required override to comply with EIP-2981
+  /// @param tokenId the NFT id to burn royalty information for
+  function _burn(uint256 tokenId)
+      internal
+      virtual
+      override(ERC721, ERC721Royalty)
+  {
+      super._burn(tokenId);
+  }
 }

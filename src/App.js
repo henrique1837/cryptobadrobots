@@ -1,9 +1,12 @@
 import React,{useState,useEffect} from "react";
+import { ethers } from "ethers";
 
 import useConfig from "./hooks/config";
 import useClient from "./hooks/useGraphClient";
 import useWeb3Modal from "./hooks/useWeb3Modal";
-import useContract from "./hooks/useContract";
+
+
+import { addresses, abis } from "./contracts";
 
 
 import Menu from "./components/Menu";
@@ -21,7 +24,7 @@ function App() {
   const CONFIG = useConfig();
   const {client,initiateClient,contractAddress,getNftsFrom,getLastNfts} = useClient();
   const {provider,coinbase,netId,loadWeb3Modal} = useWeb3Modal();
-  const {contract} = useContract();
+  const [contract,setContract] = useState();
   const [nfts,setNFTs] = useState();
   const [myNfts,setMyNFTs] = useState();
 
@@ -31,7 +34,6 @@ function App() {
     return(
       new Promise(async (resolve,reject) => {
         try {
-          let uri;
           let tokenURI;
           const contractAddress = item.id.split("/")[0];
           //ERC1155
@@ -43,13 +45,7 @@ function App() {
           if(!tokenURI){
             resolve({});
           }
-          if(!tokenURI.includes("://")){
-              uri = `https://ipfs.io/ipfs/${tokenURI}`;
-          } else if(tokenURI.includes("ipfs://") && !tokenURI.includes("https://ipfs.io/ipfs/")){
-            uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
-          } else {
-            uri = tokenURI
-          }
+          const uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           let metadataToken = JSON.parse(await (await fetch(uri)).text());
           resolve({
             img: metadataToken.image.replace('ipfs://',"https://ipfs.io/ipfs/"),
@@ -63,45 +59,54 @@ function App() {
     )
   }
 
+  const getLastNftsMetadatas = async (address) => {
+    let results;
+    if(address){
+      results = await getNftsFrom(coinbase);
+    } else {
+      results = await getLastNfts();
+    }
+    console.log(results)
+    const erc721Tokens = results.data.erc721Transfers;
+    const promises = erc721Tokens.map(getMetadata);
+    const newNfts = await Promise.all(promises);
+    if(address){
+      setMyNFTs(newNfts)
+    } else {
+      setNFTs(newNfts);
+    }
+  }
+
 
   useEffect(() => {
+    if(netId === 4){
+      setContract(new ethers.Contract(addresses.nft.rinkeby,abis.nftAbi,provider))
+    } else if(netId === 28) {
+      setContract(new ethers.Contract(addresses.nft.rinkeby_boba,abis.nftAbi,provider))
+    } /*else if(netId === 137) {
+      setContract();
+    }*/ else {
+      setContract();
+      setNFTs();
+      setMyNFTs();
+      return;
+    }
+
+    setNFTs();
+    setMyNFTs();
     initiateClient(netId);
   },[netId]);
 
-  useEffect(() => {
-    if(contract && coinbase){
-      const filter = contract.filters.Transfer("0x0000000000000000000000000000000000000000",null,null);
-      const res = contract.on(filter, async (from,to,tokenId) => {
-        await getLastNfts();
-        await getNftsFrom(coinbase)
-      });
-
-    }
-  },[contract,coinbase])
 
   useEffect(() => {
     if(client && contractAddress){
-      getLastNfts().
-        then(async results => {
-          console.log(results)
-          const erc721Tokens = results.data.erc721Tokens;
-          const promises = erc721Tokens.map(getMetadata);
-          const newNfts = await Promise.all(promises);
-          setNFTs(newNfts);
-        });
+      getLastNftsMetadatas();
     }
   },[client,contractAddress])
 
   useEffect(() => {
     if(coinbase && client && contractAddress){
-      getNftsFrom(coinbase).
-        then(async results => {
-          console.log(results)
-          const erc721Tokens = results.data.erc721Tokens;
-          const promises = erc721Tokens.map(getMetadata);
-          const newMyNfts = await Promise.all(promises);
-          setMyNFTs(newMyNfts);
-        });
+      getLastNftsMetadatas(coinbase)
     }
   },[coinbase,client,contractAddress])
 
@@ -120,29 +125,56 @@ function App() {
 
         <s.SpacerSmall />
 
-        <Banner title={<s.StyledLogo  ai='flex-center' src="/config/images/logo_complete.png"/>} subtitle={`Smart Contract address: ${contract?.address}`} />
+        <Banner title={<s.StyledLogo  ai='flex-center' src="/config/images/logo_complete.png"/>}
+                subtitle={
+                  contract &&
+                  <>Smart Contract address: <s.StyledLink target="_blank" href={
+                    netId === 4 ?
+                    `${CONFIG.SCAN_LINK_RINKEBY}/${contract.address}`:
+                    netId === 28 ?
+                    `${CONFIG.SCAN_LINK_BOBA_RINKEBY}/${contract.address}`:
+                    `${CONFIG.SCAN_LINK}/${contract.address}`
+                  }>{contract.address}</s.StyledLink></>}
+                   />
 
         <s.SpacerMedium />
-        <s.Container jc="center" ai="center">
-          <s.TextDescription
-            style={{
-              textAlign: "center",
-              color: "var(--primary-text)",
-            }}
-          >
-            <p>The badest robots of Boba network!</p>
-            <p>Check minted NFTs at <a href={CONFIG.MARKETPLACE_LINK} rel="noreferrer" style={{color:'darkgrey'}} target="_blank">{CONFIG.MARKETPLACE}</a></p>
+        <s.Container jc="center" ai="center"
+        style={{
+          textAlign: "center",
+          color: "var(--primary-text)",
+        }}>
 
-          </s.TextDescription>
+            <p>The badest robots of {
+              netId === 4 ?
+              "Rinkeby" :
+              netId === 28 ?
+              "Boba Rinkeby" :
+              "Polygon"
+            } network!</p>
+            <p>Check minted NFTs at <a href={
+              `${netId === 4 ?
+               CONFIG.MARKETPLACE_LINK_RINKEBY :
+               netId === 28 ?
+               CONFIG.MARKETPLACE_LINK_BOBA_RINKEBY :
+               CONFIG.MARKETPLACE_LINK}/${contract?.address}`
+             } rel="noreferrer" style={{color:'darkgrey'}} target="_blank">{
+               `${netId === 4 ?
+                CONFIG.MARKETPLACE_RINKEBY :
+                netId === 28 ?
+                CONFIG.MARKETPLACE_BOBA_RINKEBY :
+                CONFIG.MARKETPLACE}`
+             }</a></p>
+
         </s.Container>
 
         <MintComponent
           loadWeb3Modal={loadWeb3Modal}
           coinbase={coinbase}
+          netId={netId}
           provider={provider}
           contract={contract}
           getNftsFrom={getNftsFrom}
-          getLastNfts={getLastNfts}
+          getLastNftsMetadatas={getLastNftsMetadatas}
         />
 
         {

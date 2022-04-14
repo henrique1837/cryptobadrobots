@@ -1,8 +1,8 @@
 {
-  "name": "gm_by_rykyart",
+  "name": "CryptoBadRobots",
   "version": "1.0.0",
   "homepage": "./",
-  "description": "GM by Rykyart.",
+  "description": "Bad Robots!",
   "private": true,
   "dependencies": {
     "@apollo/client": "^3.5.10",

@@ -2,7 +2,8 @@
 // Goerli, Kovan, Rinkeby and Ropsten. Replace it with your smart contracts.
 const addresses = {
   nft: {
-    rinkeby: "0xfb0975b197E861289c4442dB3ff2A60338487172",
+    polygon: "",
+    rinkeby: "0x7a5c440a8bf560e61bb37548dc9b137828b16b70",
     rinkeby_boba: "0xb249D50205FA10096f2e086196EeF7259257a730"
   }
 };
