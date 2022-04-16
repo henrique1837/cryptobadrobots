@@ -61,7 +61,6 @@ function useGraphClient() {
       	  id,
           token {
             identifier,
-            owner,
             uri
           }
       	}
@@ -87,7 +86,6 @@ function useGraphClient() {
          id,
          token {
            identifier,
-           owner,
            uri
          }
        }

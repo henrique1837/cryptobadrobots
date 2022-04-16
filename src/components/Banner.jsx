@@ -23,7 +23,7 @@ export default function Banner({ title, subtitle }) {
     </Container>
     <BannerContainer ai="flex-center">
       <center>
-        <img src="/config/images/images.gif" alt="" style={{borderRadius: "25px",width: "300px"}} />
+        <img src="/config/images/images.gif" alt="" style={{borderRadius: "25px",width: "250px"}} />
       </center>
     </BannerContainer>
   </>

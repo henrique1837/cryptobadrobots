@@ -22,6 +22,8 @@ export default function About() {
       }}>
         <p>Buy your robot and be bad! Crypto Bad Robots!!!! You never forget them cause they will be part of your nightmares!</p>
         <p>Bad Robot Bad Robot Bad Crypto Robot!</p>
+        <p>Robots IDs are generated using <StyledLink target={"_blank"} href={'https://docs.chain.link/docs/chainlink-vrf/'} rel="noreferrer" style={{color: 'darkgrey'}}>Chainlink VRF</StyledLink></p>
+
         <p>Dont be shy, let's kill others NFTs at <StyledLink target={"_blank"} href={'https://thevibes--space-crypto.ipns.dweb.link/#/badrobots-v0'} rel="noreferrer" style={{color: 'darkgrey'}}>TheVibes Space</StyledLink></p>
       </div>
     </Container>

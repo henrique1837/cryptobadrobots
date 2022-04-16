@@ -15,6 +15,7 @@ import {
   TextTitle
 } from "../styles/globalStyles"
 import useConfig from '../hooks/config';
+import { useAppContext } from '../hooks/useAppState'
 
 
 const truncate = (input, len) =>
@@ -26,47 +27,20 @@ export default function MintComponent(props) {
 
 
   const CONFIG = useConfig();
+  const { state } = useAppContext();
+
   const [claimingNft, setClaimingNft] = useState(false);
   const [feedback, setFeedback] = useState(`Click buy to mint your NFT.`);
   const [mintAmount, setMintAmount] = useState(1);
-  const [totalSupply,setTotalSupply] = useState();
-  const [maxSupply,setMaxSupply] = useState();
-  const [cost,setCost] = useState(CONFIG.DISPLAY_COST);
-
-
-  const initiateContracts = async () => {
-
-    try{
-      const newSupply = await props.contract.totalSupply()
-      const newTotalSupply = Number(newSupply);
-      const newMaxSupply = Number(await props.contract.maxSupply());
-      const newCost = Number(await props.contract.cost())/10**18;
-      setTotalSupply(newTotalSupply);
-      setMaxSupply(newMaxSupply);
-      setCost(newCost);
-      const filter = props.contract.filters.Transfer("0x0000000000000000000000000000000000000000",null,null);
-      const res = props.contract.on(filter, async (from,to,tokenId) => {
-        let eventTotalSupply = Number(await props.contract.totalSupply());
-        setTotalSupply(eventTotalSupply);
-        await props.getLastNftsMetadatas();
-        if(props.coinbase){
-          await props.getLastNftsMetadatas(props.coinbase)
-        }
-      });
-    } catch(err){
-      console.log(err)
-    }
-
-  }
 
   const claimNFTs = async () => {
     try{
-      let totalCost = String(cost * mintAmount);
+      let totalCost = String(state.cost * mintAmount);
       console.log("Cost: ", totalCost);
       setFeedback(`Minting your CryptoBadRobot ...`);
       setClaimingNft(true);
-      const signer = props.provider.getSigner()
-      const tokenWithSigner = props.contract.connect(signer);
+      const signer = state.provider.getSigner()
+      const tokenWithSigner = state.contract.connect(signer);
       const tx = await tokenWithSigner.mint(mintAmount,{
         value: ethers.utils.parseEther(totalCost.toString())
       });
@@ -77,16 +51,25 @@ export default function MintComponent(props) {
       setFeedback(
         `CryptoBadRobot will emerge from the apocalypse soon!`
       );
-      const newTotalSupply = Number(await props.contract.totalSupply());
-      setTotalSupply(newTotalSupply);
+
       setTimeout(() => {
         setClaimingNft(false);
         setFeedback();
 
       },10000)
     } catch(err){
-      console.log(err);
-      setFeedback(err.message);
+      let message = err.message
+      try{
+        console.log(message.split('error=')[1].split(', code=')[0].split('""}')[0])
+
+        const obj = JSON.parse(message.split('error=')[1].split(', code=')[0].split('""}')[0].split(', method="estimateGas"')[0])
+        console.log(obj);
+        message = obj.message;
+
+      } catch(err){
+        console.log(err)
+      }
+      setFeedback(message);
       setClaimingNft(false);
       setTimeout(() => {
         setClaimingNft(false);
@@ -108,14 +91,6 @@ export default function MintComponent(props) {
   };
 
 
-  useEffect(() => {
-    if(props.contract){
-      initiateContracts()
-    } else {
-      setTotalSupply();
-      setMaxSupply();
-    }
-  },[props.contract])
 
 
   return (
@@ -135,7 +110,7 @@ export default function MintComponent(props) {
                 color: "var(--accent-text)",
               }}
             >
-              {totalSupply ? totalSupply : 0 } / {maxSupply ? maxSupply : 0}
+              {state.totalSupply ? state.totalSupply : 0 } / {state.maxSupply ? state.maxSupply : 0}
             </TextTitle>
             <TextDescription
               style={{
@@ -144,17 +119,17 @@ export default function MintComponent(props) {
               }}
             >
               <StyledLink target={"_blank"} href={
-                `${props.netId === 4 ?
+                `${state.netId === 4 ?
                  CONFIG.SCAN_LINK_RINKEBY :
-                 props.netId === 28 ?
+                 state.netId === 28 ?
                  CONFIG.SCAN_LINK_BOBA_RINKEBY :
-                 CONFIG.SCAN_LINK}/${props.contract?.address}`
+                 CONFIG.SCAN_LINK}/${state.contract?.address}`
               }>
-                {props.contract && truncate(props.contract?.address, 15)}
+                {state.contract && state.contract?.address}
               </StyledLink>
             </TextDescription>
             <SpacerSmall />
-            {Number(totalSupply) >= Number(maxSupply) ? (
+            {Number(state.totalSupply) >= Number(state.maxSupply) ? (
               <>
                 <TextTitle
                   style={{ textAlign: "center", color: "var(--accent-text)" }}
@@ -168,17 +143,17 @@ export default function MintComponent(props) {
                 </TextDescription>
                 <SpacerSmall />
                 <StyledLink target={"_blank"} href={
-                  props.netId === 4 ?
+                  state.netId === 4 ?
                   CONFIG.MARKETPLACE_LINK_RINKEBY :
-                  props.netId === 28 ?
+                  state.netId === 28 ?
                   CONFIG.MARKETPLACE_LINK_BOBA_RINKEBY :
                   CONFIG.MARKETPLACE_LINK
                 }>
                   {
-                    props.netId === 4 ?
+                    state.netId === 4 ?
                     CONFIG.MARKETPLACE_RINKEBY :
-                    props.netId === 28 ?
-                    CONFIG.MARKETPLACE_BOBA_RINKEBY : 
+                    state.netId === 28 ?
+                    CONFIG.MARKETPLACE_BOBA_RINKEBY :
                     CONFIG.MARKETPLACE
                   }
                 </StyledLink>
@@ -188,9 +163,9 @@ export default function MintComponent(props) {
                 <TextTitle
                   style={{ textAlign: "center", color: "var(--accent-text)" }}
                 >
-                  1 {CONFIG.SYMBOL} costs {cost}{" "}
+                  1 {CONFIG.SYMBOL} costs {state.cost}{" "}
                   {
-                    props.netId === 4 ?
+                    state.netId === 4 ?
                     "ETH" :
                     "MATIC"
                   }
@@ -203,8 +178,8 @@ export default function MintComponent(props) {
                 </TextDescription>
                 <SpacerSmall />
                 {
-                  !props.coinbase ||
-                  !props.contract ? (
+                  !state.coinbase ||
+                  !state.contract ? (
                   <Container ai={"center"} jc={"center"}>
                     <TextDescription
                       style={{
@@ -219,25 +194,11 @@ export default function MintComponent(props) {
                     <StyledButton
                       onClick={async (e) => {
                         e.preventDefault();
-                        await props.loadWeb3Modal();
+                        await state.loadWeb3Modal();
                       }}
                     >
                       CONNECT
                     </StyledButton>
-                    {
-                        props.err &&
-                        <>
-                          <SpacerSmall />
-                          <TextDescription
-                            style={{
-                              textAlign: "center",
-                              color: "var(--accent-text)",
-                            }}
-                          >
-                            {props.err.message}
-                          </TextDescription>
-                        </>
-                    }
                   </Container>
                 ) : (
                   <>
@@ -295,6 +256,6 @@ export default function MintComponent(props) {
             <SpacerMedium />
           </Container>
           <SpacerLarge />
-        </ResponsiveWrapper>
+    </ResponsiveWrapper>
   )
 }

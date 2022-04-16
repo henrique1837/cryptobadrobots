@@ -1,9 +1,10 @@
-import React,{useState,useEffect} from "react";
+import React,{useState,useMemo,useEffect,useCallback} from "react";
 import { ethers } from "ethers";
 
 import useConfig from "./hooks/config";
 import useClient from "./hooks/useGraphClient";
 import useWeb3Modal from "./hooks/useWeb3Modal";
+import { AppContext, useAppState } from './hooks/useAppState'
 
 
 import { addresses, abis } from "./contracts";
@@ -22,11 +23,20 @@ import About from "./components/About";
 
 function App() {
   const CONFIG = useConfig();
+  const { state, actions } = useAppState();
+
   const {client,initiateClient,contractAddress,getNftsFrom,getLastNfts} = useClient();
-  const {provider,coinbase,netId,loadWeb3Modal} = useWeb3Modal();
+  const {provider,coinbase,netId,loadWeb3Modal,connecting} = useWeb3Modal();
   const [contract,setContract] = useState();
-  const [nfts,setNFTs] = useState();
-  const [myNfts,setMyNFTs] = useState();
+  const [initiated,setInitiated] = useState();
+
+  const [totalSupply,setTotalSupply] = useState();
+  const [maxSupply,setMaxSupply] = useState();
+  const [cost,setCost] = useState(CONFIG.DISPLAY_COST);
+  const [nfts,setNFTs] = useState([]);
+  const [myNfts,setMyNFTs] = useState([]);
+  const [loaded,setLoaded] = useState();
+  const [loadedCoinbase,setLoadedCoinbase] = useState();
 
 
 
@@ -47,11 +57,10 @@ function App() {
           }
           const uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
           let metadataToken = JSON.parse(await (await fetch(uri)).text());
-          resolve({
+          resolve(JSON.stringify({
             img: metadataToken.image.replace('ipfs://',"https://ipfs.io/ipfs/"),
-            name: metadataToken.name,
-            owner: item.owner
-          })
+            name: metadataToken.name
+          }))
         } catch(err){
           resolve({});
         }
@@ -59,26 +68,87 @@ function App() {
     )
   }
 
-  const getLastNftsMetadatas = async (address) => {
-    let results;
-    if(address){
-      results = await getNftsFrom(coinbase);
-    } else {
-      results = await getLastNfts();
+  const getLastNftsMetadatas = useCallback(async (address) => {
+    try{
+      let results;
+      if(address){
+        results = await getNftsFrom(address);
+      } else {
+        results = await getLastNfts();
+      }
+      console.log(results)
+      const erc721Tokens = results.data.erc721Transfers;
+      const promises = erc721Tokens.map(getMetadata);
+      const newNfts = await Promise.all(promises);
+      if(address){
+        setMyNFTs(newNfts)
+      } else {
+        setNFTs(newNfts);
+      }
+    } catch(err){
+
     }
-    console.log(results)
-    const erc721Tokens = results.data.erc721Transfers;
-    const promises = erc721Tokens.map(getMetadata);
-    const newNfts = await Promise.all(promises);
-    if(address){
-      setMyNFTs(newNfts)
-    } else {
-      setNFTs(newNfts);
+  },[nfts,contract])
+
+  const getLastNftsMTEvents = async (from,to,tokenId) => {
+    console.log(from,to,tokenId)
+    if(!to || !tokenId){
+      return
+    }
+    console.log(from,to,tokenId)
+    const tokenURI = await contract.tokenURI(tokenId);
+    const uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
+    const metadataToken = JSON.parse(await (await fetch(uri)).text());
+    const obj = {
+      img: metadataToken.image.replace('ipfs://',"https://ipfs.io/ipfs/"),
+      name: metadataToken.name
+    }
+    console.log(coinbase,obj);
+    if(nfts.length === 0){
+      await getLastNftsMetadatas();
+    }
+    if(!nfts.includes(JSON.stringify(obj))){
+      setNFTs([JSON.stringify(obj),...nfts]);
     }
   }
 
+  const getMyLastNftsMTEvents = async (from,to,tokenId) => {
+    if(!to || !tokenId){
+      return
+    }
+    const tokenURI = await contract.tokenURI(tokenId);
+    const uri = tokenURI.replace("ipfs://","https://ipfs.io/ipfs/");
+    const metadataToken = JSON.parse(await (await fetch(uri)).text());
+    const obj = {
+      img: metadataToken.image.replace('ipfs://',"https://ipfs.io/ipfs/"),
+      name: metadataToken.name
+    }
+    if(myNfts.length === 0){
+      await getLastNftsMetadatas(to)
+    }
+    if(!myNfts.includes(JSON.stringify(obj))){
+      setMyNFTs([JSON.stringify(obj),...myNfts]);
+    }
+  }
+
+  const initiateContracts = async () => {
+
+    try{
+      const newSupply = await contract.totalSupply()
+      const newTotalSupply = Number(newSupply);
+      const newMaxSupply = Number(await contract.maxSupply());
+      const newCost = Number(await contract.cost())/10**18;
+      setTotalSupply(newTotalSupply);
+      setMaxSupply(newMaxSupply);
+      setCost(newCost);
+    } catch(err){
+      console.log(err)
+    }
+
+  }
 
   useEffect(() => {
+    setLoaded(false);
     if(netId === 4){
       setContract(new ethers.Contract(addresses.nft.rinkeby,abis.nftAbi,provider))
     } else if(netId === 28) {
@@ -87,30 +157,105 @@ function App() {
       setContract();
     }*/ else {
       setContract();
-      setNFTs();
-      setMyNFTs();
+      setNFTs([]);
+      setMyNFTs([]);
       return;
     }
 
-    setNFTs();
-    setMyNFTs();
+    setNFTs([]);
+    setMyNFTs([]);
     initiateClient(netId);
+
+  },[netId]);
+
+  useMemo(() => {
+    if(contract){
+      initiateContracts();
+    }
+  },[contract]);
+
+  useEffect(() => {
+    actions.setProvider(provider);
+  },[provider]);
+  useEffect(() => {
+    actions.setCost(cost);
+  },[cost]);
+  useEffect(() => {
+    actions.setLoadWeb3Modal(loadWeb3Modal);
+  },[loadWeb3Modal]);
+  useEffect(() => {
+    actions.setCoinbase(coinbase);
+  },[coinbase]);
+  useEffect(() => {
+    actions.setTotalSupply(totalSupply);
+  },[totalSupply]);
+  useEffect(() => {
+    actions.setMaxSupply(maxSupply);
+  },[maxSupply]);
+  useEffect(() => {
+    actions.setContract(contract);
+  },[contract]);
+  useEffect(() => {
+    actions.setNetId(netId);
   },[netId]);
 
 
   useEffect(() => {
-    if(client && contractAddress){
-      getLastNftsMetadatas();
+    if(nfts.length > 5){
+      nfts.pop();
     }
-  },[client,contractAddress])
+  },[nfts]);
 
   useEffect(() => {
-    if(coinbase && client && contractAddress){
-      getLastNftsMetadatas(coinbase)
+    if(myNfts.length > 5){
+      myNfts.pop();
     }
-  },[coinbase,client,contractAddress])
+  },[myNfts]);
+
+  useEffect(() => {
+    if(!loaded && client && contractAddress){
+      getLastNftsMetadatas()
+      .then(() => {
+        setLoaded(true)
+      });
+    }
+  },[client,contractAddress,loaded])
+
+  useEffect(() => {
+    if(!loadedCoinbase && coinbase && client && contractAddress){
+      getLastNftsMetadatas(coinbase)
+      .then(() => {
+        setLoadedCoinbase(true)
+      });
+    }
+  },[coinbase,client,contractAddress,loadedCoinbase])
+
+  useMemo(() => {
+    if(loaded && contract){
+      const filter = contract.filters.Transfer("0x0000000000000000000000000000000000000000",null,null);
+      const res = contract.on(filter, async (from,to,tokenId) => {
+        console.log(from,to,tokenId)
+        let eventTotalSupply = Number(await contract.totalSupply());
+        setTotalSupply(eventTotalSupply);
+        if(to){
+          await getLastNftsMTEvents(from,to,tokenId);
+        }
+      });
+    }
+  },[loaded,contract])
+
+  useMemo(() => {
+    if(loadedCoinbase && contract && coinbase){
+      const filter = contract.filters.Transfer("0x0000000000000000000000000000000000000000",coinbase,null);
+      const res = contract.on(filter, async (from,to,tokenId) => {
+        await getMyLastNftsMTEvents(from,to,tokenId);
+      });
+    }
+  },[loadedCoinbase,contract,coinbase])
 
   return (
+    <AppContext.Provider value={{ state, actions }}>
+
       <s.Container
         style={{ padding: 24, backgroundColor: "grey" }}
         image={CONFIG.SHOW_BACKGROUND ? "/config/images/bg.png" : null}
@@ -167,19 +312,11 @@ function App() {
 
         </s.Container>
 
-        <MintComponent
-          loadWeb3Modal={loadWeb3Modal}
-          coinbase={coinbase}
-          netId={netId}
-          provider={provider}
-          contract={contract}
-          getNftsFrom={getNftsFrom}
-          getLastNftsMetadatas={getLastNftsMetadatas}
-        />
+        <MintComponent />
 
         {
           myNfts?.length > 0 &&
-          <NFTs nfts={myNfts} title={"Latest 5 BadRobots owned by You"} />
+          <NFTs nfts={myNfts.map(str => {return(JSON.parse(str))})} title={"Latest 5 BadRobots owned by You"} />
         }
 
 
@@ -190,7 +327,7 @@ function App() {
         <s.SpacerSmall/>
         {
           nfts?.length > 0 &&
-          <NFTs nfts={nfts} title={"Latest 5 BadRobots Minted"} />
+          <NFTs nfts={nfts.map(str => {return(JSON.parse(str))})} title={"Latest 5 BadRobots Minted"} />
         }
 
 
@@ -209,6 +346,7 @@ function App() {
         <s.SpacerMedium />
         <Footer />
       </s.Container>
+    </AppContext.Provider>
   );
 }
 

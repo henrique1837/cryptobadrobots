@@ -28,6 +28,9 @@ const NFT = ({img,name}) => (
 )
 
 export default function NFTs({nfts,title}) {
+  if(nfts.length > 5){
+    nfts.pop()
+  }
   return (
     <Container id="nfts" jc="center" ai="center">
       <TextTitle
