@@ -14,6 +14,7 @@ const providerOptions = {
     package: WalletConnectProvider, // required
     options: {
       rpc:{
+        137: "https://rpc-mainnet.maticvigil.com",
         288: "https://rinkeby.boba.network/",
         4: "https://rinkeby.infura.io/v3/7c611c436e1a448bbd57b70cdbe9a5c0"
       }
@@ -46,8 +47,8 @@ function useWeb3Modal(config = {}) {
     async function () {
       await web3Modal.clearCachedProvider();
       setCoinbase();
-      setNetId(4);
-      setProvider(new ethers.providers.JsonRpcProvider("https://rinkeby.infura.io/v3/7c611c436e1a448bbd57b70cdbe9a5c0"));
+      setNetId(137);
+      setProvider(new ethers.providers.JsonRpcProvider("https://rpc-mainnet.maticvigil.com"));
     },
     [],
   );
@@ -110,8 +111,8 @@ function useWeb3Modal(config = {}) {
   useMemo(() => {
 
     if(!noProvider && !autoLoaded && !web3Modal.cachedProvider && !connecting){
-      setProvider(new ethers.providers.JsonRpcProvider("https://rinkeby.infura.io/v3/7c611c436e1a448bbd57b70cdbe9a5c0"));
-      setNetId(4);
+      setProvider(new ethers.providers.JsonRpcProvider("https://rpc-mainnet.maticvigil.com"));
+      setNetId(137);
       setNoProvider(true);
       setAutoLoaded(true);
     }

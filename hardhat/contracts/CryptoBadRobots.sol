@@ -3,12 +3,14 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
 
-contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
+contract CryptoBadRobots is ERC721Enumerable,ERC721Royalty,Ownable,Pausable,VRFConsumerBase {
 
   using Strings for uint256;
 
@@ -17,14 +19,16 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
   uint256 internal fee;
   string public baseURI;
   string public baseExtension = ".json";
-  uint256 public cost = 20 ether;
-  uint256 public maxSupply = 3000;
+  uint256 public cost = 35 ether;
+  uint256 public maxSupply = 1000;
   uint256 public maxMintAmount = 5;
 
   uint256 public pendingMints = 0;
   uint256 public totalPendingRequests = 0;
   uint256[] public lockedIds;
-
+  /// @dev Required by EIP-2981: NFT Royalty Standard
+  address private _receiver;
+  uint96 private _feeNumerator;
 
   mapping(uint256 => address) public creator;
   mapping(address => uint256) public addressMintedBalance;
@@ -54,6 +58,8 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     for(uint256 i = 0;i < maxSupply;i++){
       lockedIds.push(i.add(1));
     }
+    /// @dev Set default royalties for EIP-2981
+    _setDefaultRoyalty(owner(), 500);
   }
 
   // internal
@@ -62,7 +68,7 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
   }
 
   // public
-  function mint(uint256 _mintAmount) external payable {
+  function mint(uint256 _mintAmount) external payable whenNotPaused {
 
     uint256 supply = totalSupply();
     require(pendingRequest[msg.sender] == false,"Please wait VRF return request");
@@ -76,6 +82,7 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     }
     require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK to send request!");
     bytes32 requestId = requestRandomness(keyHash, fee);
+    requestMinter[requestId] = msg.sender;
     requestMintAmount[requestId] = _mintAmount;
     (bool success, ) = payable(owner()).call{value: msg.value}("");
     require(success);
@@ -84,6 +91,16 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     totalPendingRequests = totalPendingRequests.add(1);
   }
 
+  /// Check interface support.
+  /// @param interfaceId the interface id to check support for
+  function supportsInterface(bytes4 interfaceId)
+      public
+      view
+      override(ERC721Enumerable, ERC721Royalty)
+      returns (bool)
+  {
+      return super.supportsInterface(interfaceId);
+  }
 
   /**
    * Callback function used by VRF Coordinator
@@ -134,6 +151,16 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
         : "";
   }
 
+  // From https://github.com/vzoo/ERC721-with-EIP2981-Polygon-bulk-mint-OpenSea-compatible/blob/main/contracts/VZOOERC721.sol
+  /// Sets the default royalty address and fee
+  /// @dev feeNumerator defaults to 1000 = 10% of transaction value
+  /// @param receiver wallet address of new receiver
+  /// @param feeNumerator new fee numerator
+  function setDefaultRoyalty(address receiver, uint96 feeNumerator)
+      external
+      onlyOwner {
+      _setDefaultRoyalty(receiver, feeNumerator);
+  }
 
   function setBaseURI(string memory _newBaseURI) private  {
     baseURI = _newBaseURI;
@@ -147,9 +174,42 @@ contract CryptoBadRobots is ERC721Enumerable,Ownable,VRFConsumerBase {
     require(LINK.balanceOf(address(this)) >= total, "Not enough LINK");
     LINK.transfer(msg.sender,total);
   }
+
   function withdraw() external onlyOwner {
     (bool sent, ) = payable(msg.sender).call{value: address(this).balance}("");
     require(sent);
+  }
+
+  // Pauses the contract
+  function pause() external onlyOwner {
+      _pause();
+  }
+
+  // Unpauses the contract
+  function unpause() external onlyOwner {
+      _unpause();
+  }
+
+
+  /// @param from wallet address to send the NFT from
+  /// @param to wallet address to send the NFT to
+  /// @param tokenId NFT id to transfer
+  function _beforeTokenTransfer(
+      address from,
+      address to,
+      uint256 tokenId
+  ) internal virtual override(ERC721, ERC721Enumerable) {
+      super._beforeTokenTransfer(from, to, tokenId);
+  }
+
+  /// @dev Required override to comply with EIP-2981
+  /// @param tokenId the NFT id to burn royalty information for
+  function _burn(uint256 tokenId)
+      internal
+      virtual
+      override(ERC721, ERC721Royalty)
+  {
+      super._burn(tokenId);
   }
 
 }

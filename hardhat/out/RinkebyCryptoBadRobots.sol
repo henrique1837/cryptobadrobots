@@ -1987,7 +1987,7 @@ contract RinkebyCryptoBadRobots is ERC721Enumerable,ERC721Royalty,Ownable,Pausab
   string public baseURI;
   string public baseExtension = ".json";
   uint256 public cost = 0.01 ether;
-  uint256 public maxSupply = 100;
+  uint256 public maxSupply = 1000;
   uint256 public maxMintAmount = 5;
 
   uint256 public pendingMints = 0;

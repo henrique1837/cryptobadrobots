@@ -153,9 +153,9 @@ function App() {
       setContract(new ethers.Contract(addresses.nft.rinkeby,abis.nftAbi,provider))
     } else if(netId === 28) {
       setContract(new ethers.Contract(addresses.nft.rinkeby_boba,abis.nftAbi,provider))
-    } /*else if(netId === 137) {
-      setContract();
-    }*/ else {
+    } else if(netId === 137){
+      setContract(new ethers.Contract(addresses.nft.polygon,abis.nftAbi,provider))
+    } else {
       setContract();
       setNFTs([]);
       setMyNFTs([]);

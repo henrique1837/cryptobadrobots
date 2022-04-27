@@ -9,6 +9,7 @@ import { addresses, abis } from "../contracts";
 const APIURL_BOBA = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-boba";
 const APIURL_RINKEBY_BOBA = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-boba";
 const APIURL_RINKEBY = "https://api.thegraph.com/subgraphs/name/ryry79261/rinkeby-erc721";
+const APIURL_POLYGON = "https://api.thegraph.com/subgraphs/name/quantumlyy/eip721-subgraph-matic";
 
 function useGraphClient() {
   const CONFIG = useConfig()
@@ -40,6 +41,13 @@ function useGraphClient() {
          cache: new InMemoryCache()
        });
        newContractAddress = addresses.nft.boba
+     }
+     if(netId === 137){
+       newClient = new ApolloClient({
+         uri: APIURL_POLYGON,
+         cache: new InMemoryCache()
+       });
+       newContractAddress = addresses.nft.polygon
      }
      setContractAddress(newContractAddress);
      setClient(newClient);

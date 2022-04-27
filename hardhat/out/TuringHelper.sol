@@ -136,7 +136,7 @@ contract TuringHelper is ITuringHelper, Ownable {
     _;
   }
 
-  constructor () public {
+  constructor () {
     Self = TuringHelper(address(this));
   }
 
