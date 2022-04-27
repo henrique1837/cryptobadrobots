@@ -69,9 +69,9 @@ It is now time for you to pick a side.
 
 I’m asking for your help, to wipe these robots from the world, or else we’re the ones that will be wiped.
 
-Killer bots are minted every day, but we hacked their system to the point that they can’t mint more than 3.500 bots.
+Killer bots are minted every day, but we hacked their system to the point that they can’t mint more than 1000 bots.
 
-We got a encrypted message today and we cant solve it yet so we’re offering 500 robot drops for the first 500 that can solve what this message says!
+We got a encrypted message today and we cant solve it yet so we’re offering 100 robot drops for the first 100 that can solve what this message says!
 
 From now on, the future is in YOUR hand!
 
