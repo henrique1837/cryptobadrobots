@@ -55,7 +55,7 @@ node_modules/
 jspm_packages/
 
 hardhat/node_modules
-
+hardhat/package-lock.json
 # TypeScript v1 declaration files
 
 typings/
