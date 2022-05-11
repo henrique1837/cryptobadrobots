@@ -316,7 +316,7 @@ function App() {
 
         {
           myNfts?.length > 0 &&
-          <NFTs nfts={myNfts.map(str => {return(JSON.parse(str))})} title={"Latest 5 BadRobots owned by You"} />
+          <NFTs nfts={myNfts.map(str => {return(JSON.parse(str))})} title={"Latest 5 BadRobots minted by You"} />
         }
 
 
@@ -337,10 +337,10 @@ function App() {
         </center>
         <s.SpacerSmall/>
         <Team members={[
-          { img: "/config/images/11.png", name: 'BongBoy'},
-          { img: "/config/images/12.png", name: 'BongMarlina'},
-          { img: "/config/images/13.png", name: 'Marola'},
-          { img: "/config/images/14.png", name: 'Maruca'},
+          { img: "/config/images/11.png", name: 'Norm'},
+          { img: "/config/images/12.png", name: 'Tcer'},
+          { img: "/config/images/13.png", name: 'Micael'},
+          { img: "/config/images/14.png", name: 'Augusto'},
         ]} />
 
         <s.SpacerMedium />

@@ -72,8 +72,7 @@ function useWeb3Modal(config = {}) {
 
       conn.on('accountsChanged', accounts => {
         const newProvider = new ethers.providers.Web3Provider(conn,"any");
-        setProvider(newProvider)
-        setCoinbase(accounts[0]);
+        window.location.reload();
       });
       conn.on('chainChanged', async chainId => {
         window.location.reload();
@@ -81,9 +80,13 @@ function useWeb3Modal(config = {}) {
       // Subscribe to provider disconnection
       conn.on("disconnect", async (error: { code: number; message: string }) => {
         logoutOfWeb3Modal();
+        window.location.reload();
+
       });
       conn.on("close", async () => {
         logoutOfWeb3Modal();
+        window.location.reload();
+
       });
 
       return;

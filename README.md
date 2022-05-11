@@ -10,6 +10,10 @@ IDs of NFTs to be minted are generated using [Chainlink VRF](https://docs.chain.
 
 BadRobots are playable on [TheVibes Space](https://thevibes--space-crypto.ipns.dweb.link/#/badrobots-v0) at our own Pos Apocalyptic Demo Map!
 
+## Demo Video
+
+[https://bafybeibmvlzp7wuneq3ouceznyrzfubmzve3jq2d3jrsspgwpt3rnitvfy.ipfs.infura-ipfs.io/](https://bafybeibmvlzp7wuneq3ouceznyrzfubmzve3jq2d3jrsspgwpt3rnitvfy.ipfs.infura-ipfs.io/)
+
 ## Story
 
 When I was little I used to hear about how bad humans are to environment, and that the world was coming to an end!
