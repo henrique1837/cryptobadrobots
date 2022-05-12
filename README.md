@@ -10,6 +10,8 @@ IDs of NFTs to be minted are generated using [Chainlink VRF](https://docs.chain.
 
 BadRobots are playable on [TheVibes Space](https://thevibes--space-crypto.ipns.dweb.link/#/badrobots-v0) at our own Pos Apocalyptic Demo Map!
 
+Currently doing tests (rinkeby network) with DAO using [OpenZeppelin Governor](https://docs.openzeppelin.com/contracts/4.x/api/governance) and [Tally](https://www.tally.xyz/governance/eip155:4:0x5c16bc1a6510fB477bf10dDe16F3a9554A1Aa444) as user interface
+
 ## Demo Video
 
 [https://bafybeibmvlzp7wuneq3ouceznyrzfubmzve3jq2d3jrsspgwpt3rnitvfy.ipfs.infura-ipfs.io/](https://bafybeibmvlzp7wuneq3ouceznyrzfubmzve3jq2d3jrsspgwpt3rnitvfy.ipfs.infura-ipfs.io/)
